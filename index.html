@@ -1,0 +1,492 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="bg-black">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kvaisakh@devops: ~</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Hide scrollbar for terminal feel */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; }
+
+        /* Input field styling */
+        input:focus { outline: none; }
+        #cmd-input {
+            background: transparent;
+            border: none;
+            color: #f3f4f6;
+            font-family: monospace;
+            width: 100%;
+            caret-color: #10b981;
+        }
+
+        /* CRT Monitor Turn Off Animation */
+        @keyframes crt-off {
+            0% { transform: scale(1, 1); opacity: 1; filter: brightness(1); }
+            40% { transform: scale(1, 0.005); opacity: 1; filter: brightness(10); }
+            70% { transform: scale(0.005, 0.005); opacity: 1; filter: brightness(10); }
+            100% { transform: scale(0, 0); opacity: 0; filter: brightness(0); }
+        }
+
+        /* Glitch Animation */
+        .reboot-glitch { animation: glitch-anim 0.2s infinite; }
+
+        @keyframes glitch-anim {
+            0% { opacity: 1; transform: translate(0); }
+            20% { opacity: 0.8; transform: translate(-2px, 1px); }
+            40% { opacity: 0.9; transform: translate(2px, -1px); }
+            60% { opacity: 1; transform: translate(-1px, 2px); }
+            80% { opacity: 0.8; transform: translate(1px, -2px); }
+            100% { opacity: 1; transform: translate(0); }
+        }
+    </style>
+</head>
+<body class="text-emerald-400 font-mono text-sm md:text-base h-screen overflow-hidden selection:bg-emerald-900 selection:text-emerald-100 transition-colors duration-300">
+
+<div id="bios-container" class="w-full h-full p-4 md:p-8 text-gray-300 flex flex-col">
+    <div class="mb-4 text-white">
+        DevOS ROM BIOS PLUS Version 2.0.26<br>
+        Copyright (C) 1985-2026 Core Technologies Ltd.
+    </div>
+    <div id="bios-logs" class="space-y-1"></div>
+</div>
+
+<div id="terminal-container" class="hidden h-full flex-col p-4 md:p-8 w-full origin-center">
+    <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-4">
+        <div>bash - kvaisakh@devops: ~</div>
+    </div>
+
+    <div class="mb-6 flex flex-wrap gap-4 text-gray-500 text-xs md:text-sm">
+        <span class="text-gray-400">Available commands:</span>
+        <button onclick="quickCommand('cd /home/kvaisakh')" class="hover:text-emerald-400 transition-colors">[ cd /home/kvaisakh ]</button>
+        <button onclick="quickCommand('cat skills.json')" class="hover:text-emerald-400 transition-colors">[ cat skills.json ]</button>
+        <button onclick="quickCommand('cat experience.log')" class="hover:text-emerald-400 transition-colors">[ cat experience.log ]</button>
+        <button onclick="quickCommand('ls -la ./projects')" class="hover:text-emerald-400 transition-colors">[ ls -la ./projects ]</button>
+        <button onclick="quickCommand('./contact.sh')" class="hover:text-emerald-400 transition-colors">[ ./contact.sh ]</button>
+        <button onclick="quickCommand('help')" class="hover:text-emerald-400 transition-colors">[ help ]</button>
+        <button onclick="quickCommand('clear')" class="hover:text-emerald-400 transition-colors">[ clear ]</button>
+        <button onclick="quickCommand('reboot')" class="hover:text-emerald-400 transition-colors">[ reboot ]</button>
+    </div>
+
+    <div id="terminal-window" class="flex-grow overflow-y-auto pb-20">
+        <div id="history"></div>
+        <div class="flex items-center mt-2 w-full">
+            <span class="text-emerald-600 font-bold mr-2 whitespace-nowrap">kvaisakh@devops:~$</span>
+            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // PORTFOLIO DATA (EDIT THIS SECTION)
+    // ==========================================
+    const portfolioData = {
+        home: {
+            ascii: `
+_   __  __     __
+| |/ /  \\ \\   / /   __ _  (_)  ___   __ _   | | __ | |__   | | __ _ __ (_)  ___   | |__  _ __     __ _  _ __
+| ' /    \\ \\ / /   / _\` | | | / __| / _\` |  | |/ / | '_ \\  | |/ /| '__|| | / __|  | '_ \\ | '_ \\ / _\` | | '_ \\
+| . \\     \\ V /    | (_| || | \\__ \\ | (_| | |   <  | | | | |   < | |   | | \\__ \\  | | | || | | || (_| || | | |
+|_|\\_\\     \\_/      \\__,_||_| |___/  \\__,_|  _|\\_\\ |_| |_| |_|\\_\\|_|   |_| |___/  |_| |_||_| |_| \\__,_||_| |_|`,
+            os: "Linux / DevOpsOS",
+            role: "DevOps Engineer",
+            company: "GE Vernova",
+            coordinates: "Hyderabad, India",
+            fuel: "Coffee / Matcha",
+            bio: "Passionate DevOps Engineer with a strong foundation in cloud infrastructure management and containerization. Proven ability to enhance operational efficiency and user satisfaction by implementing effective problem-solving strategies and fostering team collaboration."
+        },
+        skills: {
+            cloud_and_orchestration: ["Kubernetes", "AWS", "Helm", "Docker", "Podman"],
+            cicd_and_automation: ["Jenkins", "Github Actions", "Argo CD", "Ansible", "Groovy", "Python", "Bash Scripting"],
+            security: ["SonarQube", "JFrog Xray", "Aqua Security", "Trivy"],
+            observability_and_artifacts: ["Grafana", "Prometheus", "JFrog Artifactory"],
+            version_control_and_tools: ["Git", "GitHub", "Linux (RHEL/Ubuntu)"]
+        },
+        experience: [
+            {
+                status: "CURRENT_STATE",
+                title: "Software Engineering Specialist",
+                location: "GE Vernova @ Hyderabad",
+                timestamp: "August-2024 -> PRESENT",
+                duties: [
+                    "Managed cloud infrastructure on AWS, improving resource allocation and enhancing cost efficiency by 28%.",
+                    "Implemented containerization technologies such as Docker and Kubernetes for faster delivery cycles.",
+                    "Implemented code quality gateways, increasing code reliability and maintaining high standards while maintaining a minimum code coverage of 90%.",
+                    "Analyzed gaps and implemented automations to increase code quality and reduce release time by 80%.",
+                    "Resolved customer issues by establishing workarounds and solutions, reducing downtime and improving user satisfaction.",
+                    "Led platform and tool migrations including GitHub, CI tool migration from Jenkins to Actions, Artifactory, and PTE migrations."
+                ]
+            },
+            {
+                status: "PREVIOUS_STATE",
+                title: "Digital Technology Intern",
+                location: "GE Vernova / GE Digital @ Hyderabad",
+                timestamp: "January-2024 -> July-2024",
+                duties: [
+                    "Designed and developed highly scalable RESTful APIs using Java and Spring Boot.",
+                    "Conducted comprehensive API testing for Spring Boot microservices, validating data integrity, response codes, and error handling.",
+                    "Created and executed automated API test suites, reducing manual testing.",
+                    "Designed and executed end-to-end test cases for the user interface using Selenium.",
+                    "Migrated and optimized pipelines builds in Jenkins."
+                ]
+            },
+            {
+                status: "PREVIOUS_STATE",
+                title: "Software Developer Intern",
+                location: "Hindustan Aeronautics Limited @ Bangalore",
+                timestamp: "July-2023 -> August-2023",
+                duties: [
+                    "Developed deep learning model to predict oil spill locations using SAR images from aircraft RADAR."
+                ]
+            }
+        ],
+        projects: [
+            {
+                folderName: "ANSAN/",
+                permissions: "drwxr-xr-x",
+                size: "4.2K",
+                files: [
+                    { name: "readme.txt", permissions: "-rw-r--r--", size: "1.2K", desc: "App to detect Glaucoma in early stage via fundus camera", isExecutable: false },
+                    { name: "outcomes.log", permissions: "-rwxr-xr-x", size: "8.5M", desc: "App was developed and tested, research paper was published on the behaviour and outcomes of the app", isExecutable: false }
+                ]
+            },
+            {
+                folderName: "Sony Cow-KIN Project/",
+                permissions: "drwxr-xr-x",
+                size: "1.8K",
+                files: [
+                    { name: "execute.py", permissions: "-rwxrwxr-x", size: "4.1K", desc: " build was made to analyze the cows' health using sensors attached to the collar of the cow.", isExecutable: true },
+                    { name: "outcomes.log", permissions: "-rw-r--r--", size: "890B", desc: "Data like acceleration, heart rate, temperature etc were collected and analyzed.", isExecutable: false }
+                ]
+            },
+            {
+                folderName: "IoT Smart Ball/",
+                permissions: "drwxr-xr-x",
+                size: "3.1K",
+                files: [
+                    { name: "execute.py", permissions: "-rwxr-xr-x", size: "2.4M", desc: "A build in the form of a ball that can roll through pipes in remote areas to predict and find regions of water or gas leakages", isExecutable: true },
+                    { name: "outcomes.log", permissions: "-rw-r--r--", size: "11K", desc: "The smart ball was rolled through many pipes including water and gas pipelines and data was analyzed. Accurate predictions were on the location of possible leakages using ML models", isExecutable: false }
+                ]
+            },
+            {
+                folderName: "Digital Campus Ecosystem with Hierarchical Service Architecture/",
+                permissions: "drwxr-xr-x",
+                size: "1.9K",
+                files: [
+                    { name: "execute.py", permissions: "-rwxr-xr-x", size: "2.1M", desc: "A comprehensive ecosystem that integrates mobile, web, and kiosk applications with a scalable, microservices-based backend to manage end-to-end logistics transactions across a digital campus.", isExecutable: true },
+                    { name: "outcomes.log", permissions: "-rw-r--r--", size: "12K", desc: "Developed and stress-tested a scalable MVP in a cloud-native environment, resulting in pending patent recognition for original system design and implementation.", isExecutable: false }
+                ]
+            },
+            {
+                folderName: "Aadhar Portal using Blockchain Technology/",
+                permissions: "drwxr-xr-x",
+                size: "2.2K",
+                files: [
+                    { name: "readme.txt", permissions: "-rw-r--r--", size: "1.1K", desc: "Engineered a peer-to-peer (P2P) network using Python (Flask), enabling globally distributed nodes to synchronize data and maintain a decentralized ledger.", isExecutable: false },
+                    { name: "outcomes.log", permissions: "-rwxr-xr-x", size: "8.2M", desc: "Validated a decentralized security model that eliminated single points of failure, ensuring high availability and protecting data integrity against unauthorized modification through cryptographic consensus.", isExecutable: false }
+                ]
+            },
+            {
+                folderName: "Amrita Intermatch/",
+                permissions: "drwxr-xr-x",
+                size: "4.8K",
+                files: [
+                    { name: "readme.txt", permissions: "-rw-r--r--", size: "3.2K", desc: "An application in iOS for students and faculties to collaborate on project and research works and to aid a student or faculty throughout their work right from recommendations till the end.", isExecutable: false },
+                    { name: "outcomes.log", permissions: "-rwxr-xr-x", size: "5.5M", desc: "An MVP was developed and tested. Students and faculties received personalized project recommendations making it easier to work on projects", isExecutable: false }
+                ]
+            },
+        ],
+        contact: {
+            email: "kvaisakhkrishnan@gmail.com",
+            github: "https://github.com/kvaisakhkrishnan",
+            linkedin: "https://www.linkedin.com/in/vaisakhkrishnan-k"
+        }
+    };
+    // ==========================================
+
+
+    // ==========================================
+    // RENDER ENGINE (DO NOT EDIT)
+    // ==========================================
+    const renderers = {
+        'home-content': () => `
+            <div class="mt-2 mb-6 pl-4 border-l-2 border-gray-800 text-gray-300">
+                <pre class="text-emerald-500 mb-4 text-[0.6rem] md:text-xs leading-tight">${portfolioData.home.ascii}</pre>
+                <p class="mb-2"><span class="text-emerald-400">OS:</span> ${portfolioData.home.os}</p>
+                <p class="mb-2"><span class="text-emerald-400">Role:</span> ${portfolioData.home.role}</p>
+                <p class="mb-2"><span class="text-emerald-400">Company:</span> ${portfolioData.home.company}</p>
+                <p class="mb-2"><span class="text-emerald-400">Coordinates:</span> ${portfolioData.home.coordinates}</p>
+                <p class="mb-4"><span class="text-emerald-400">Fuel:</span> ${portfolioData.home.fuel}</p>
+                <p class="max-w-2xl leading-relaxed">${portfolioData.home.bio}</p>
+            </div>`,
+
+        'ls-content': () => `
+            <div class="mt-2 mb-6 pl-4 border-l-2 border-gray-800">
+                <div class="flex gap-6 text-sm md:text-base">
+                    <span class="text-blue-400 font-bold">projects/</span>
+                    <span class="text-gray-300">experience.log</span>
+                    <span class="text-gray-300">skills.json</span>
+                    <span class="text-green-400 font-bold">contact.sh</span>
+                </div>
+            </div>`,
+
+        'skills-content': () => {
+            let html = `<div class="mt-2 mb-6 pl-4 border-l-2 border-gray-800 text-gray-300">
+                <p class="text-yellow-200 mb-2">{</p><div class="pl-4">`;
+
+            const keys = Object.keys(portfolioData.skills);
+            keys.forEach((key, index) => {
+                const values = portfolioData.skills[key].map(v => `"${v}"`).join(", ");
+                const comma = index < keys.length - 1 ? "," : "";
+                html += `<p class="mb-1">"<span class="text-blue-300">${key}</span>": [${values}]${comma}</p>`;
+            });
+
+            html += `</div><p class="text-yellow-200">}</p></div>`;
+            return html;
+        },
+
+        'experience-content': () => {
+            let html = `<div class="mt-2 mb-6 pl-4 border-l-2 border-gray-800 text-gray-300">`;
+            portfolioData.experience.forEach(job => {
+                html += `
+                <div class="mb-6">
+                    <p class="text-emerald-400 font-bold">[ ${job.status} ] ${job.title}</p>
+                    <p class="text-gray-500 text-xs mb-1">Location: ${job.location}</p>
+                    <p class="text-blue-400 font-mono text-xs mb-2">Timestamp: ${job.timestamp}</p>
+                    <ul class="list-none space-y-1 text-sm md:text-base ml-2 border-l border-gray-700 pl-4">
+                        ${job.duties.map(duty => `<li>> ${duty}</li>`).join('')}
+                    </ul>
+                </div>`;
+            });
+            html += `<p class="text-gray-500 text-xs mt-4">EOF</p></div>`;
+            return html;
+        },
+
+        'projects-content': () => {
+            let html = `
+            <div class="mt-2 mb-6 pl-4 border-l-2 border-gray-800 text-gray-300">
+                <table class="w-full text-left max-w-4xl">
+                    <thead class="text-emerald-600 border-b border-gray-800">
+                    <tr>
+                        <th class="pb-2 w-32">Permissions</th>
+                        <th class="pb-2 w-24">User</th>
+                        <th class="pb-2 w-24">Size</th>
+                        <th class="pb-2">Directory/File</th>
+                    </tr>
+                    </thead>
+                    <tbody class="text-sm">`;
+
+            portfolioData.projects.forEach(proj => {
+                // Folder row
+                html += `
+                <tr class="hover:bg-gray-900 mt-2">
+                    <td class="py-1 text-blue-400">${proj.permissions}</td>
+                    <td class="py-1">kvaisakh</td>
+                    <td class="py-1">${proj.size}</td>
+                    <td class="py-1"><span class="text-blue-400 font-bold">${proj.folderName}</span></td>
+                </tr>`;
+
+                // File rows inside folder
+                proj.files.forEach((file, index) => {
+                    const isLast = index === proj.files.length - 1;
+                    const branch = isLast ? '└──' : '├──';
+                    const nameColor = file.isExecutable ? 'text-green-400 font-bold' : (file.name.includes('.log') || file.name.includes('.json') ? 'text-yellow-200' : 'text-gray-300');
+
+                    html += `
+                    <tr class="hover:bg-gray-900 text-gray-400">
+                        <td class="py-1">${file.permissions}</td>
+                        <td class="py-1">kvaisakh</td>
+                        <td class="py-1">${file.size}</td>
+                        <td class="py-1 font-mono text-gray-500">
+                            ${branch} <span class="${nameColor} font-sans">${file.name}</span>
+                            <span class="text-gray-500 text-xs ml-2 font-sans"># ${file.desc}</span>
+                        </td>
+                    </tr>`;
+                });
+                // Spacer row
+                html += `<tr><td colspan="4" class="py-2"></td></tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+            return html;
+        },
+
+        'contact-content': () => `
+            <div class="mt-2 mb-6 pl-4 border-l-2 border-gray-800 text-gray-300">
+                <p class="text-emerald-400 mb-2">Executing contact.sh...</p>
+                <p>Pinging Vaisakh's inbox...</p>
+                <p class="text-green-400 mb-4">64 bytes from ${portfolioData.contact.email}: icmp_seq=1 ttl=54 time=14.2 ms</p>
+                <p class="mb-2">Network connections established. Ready for transmission:</p>
+                <ul class="list-none space-y-2 ml-4">
+                    <li><span class="text-gray-500">Email:</span> <a href="mailto:${portfolioData.contact.email}" class="text-blue-400 hover:underline">${portfolioData.contact.email}</a></li>
+                    <li><span class="text-gray-500">GitHub:</span> <a href="${portfolioData.contact.github}" target="_blank" class="text-blue-400 hover:underline">${portfolioData.contact.github.replace('https://', '')}</a></li>
+                    <li><span class="text-gray-500">LinkedIn:</span> <a href="${portfolioData.contact.linkedin}" target="_blank" class="text-blue-400 hover:underline">${portfolioData.contact.linkedin.replace('https://', '')}</a></li>
+                </ul>
+            </div>`
+    };
+
+    const commandMap = {
+        'cd /home/kvaisakh': 'home-content',
+        'cd ~': 'home-content',
+        'cd': 'home-content',
+        'ls': 'ls-content',
+        'cat skills.json': 'skills-content',
+        'skills': 'skills-content',
+        'cat experience.log': 'experience-content',
+        'experience': 'experience-content',
+        'ls -la ./projects': 'projects-content',
+        'ls ./projects': 'projects-content',
+        'projects': 'projects-content',
+        './contact.sh': 'contact-content',
+        'contact': 'contact-content',
+        'sh contact.sh': 'contact-content'
+    };
+
+    const biosContainer = document.getElementById('bios-container');
+    const biosLogs = document.getElementById('bios-logs');
+    const terminalContainer = document.getElementById('terminal-container');
+    const inputField = document.getElementById('cmd-input');
+    const terminalHistory = document.getElementById('history');
+    const terminalWindow = document.getElementById('terminal-window');
+
+    document.body.addEventListener('click', () => {
+        if (!terminalContainer.classList.contains('hidden') && window.getSelection().toString() === '') {
+            inputField.focus();
+        }
+    });
+
+    window.onload = () => {
+        inputField.disabled = true;
+        const logs = [
+            "CPU = Intel(R) Core(TM) Processor",
+            "00640K System RAM Passed",
+            "02048M Extended RAM Passed",
+            "System BIOS shadowed",
+            "Video BIOS shadowed",
+            "Mouse initialized",
+            "Mounting file systems... [ OK ]",
+            "Starting devops_daemon... [ OK ]",
+            "Booting DevOS..."
+        ];
+
+        let delay = 0;
+        logs.forEach((log, index) => {
+            delay += Math.random() * 250 + 100;
+            setTimeout(() => {
+                biosLogs.innerHTML += `<div>${log}</div>`;
+                if (Math.random() > 0.7) {
+                    document.body.classList.add('reboot-glitch');
+                    setTimeout(() => document.body.classList.remove('reboot-glitch'), 100);
+                }
+                if (index === logs.length - 1) {
+                    setTimeout(() => startTerminal(), 800);
+                }
+            }, delay);
+        });
+    };
+
+    async function startTerminal() {
+        biosContainer.classList.add('hidden');
+        terminalContainer.classList.remove('hidden');
+        terminalContainer.classList.add('flex');
+        document.body.classList.remove('bg-black');
+        document.body.classList.add('bg-gray-950');
+
+        const initCmd = 'cd /home/kvaisakh';
+        for (let i = 0; i < initCmd.length; i++) {
+            inputField.value += initCmd.charAt(i);
+            await new Promise(r => setTimeout(r, 40));
+        }
+        await new Promise(r => setTimeout(r, 300));
+        processCommand(initCmd);
+        inputField.value = '';
+        inputField.disabled = false;
+        inputField.focus();
+    }
+
+    inputField.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const cmdString = this.value.trim();
+            this.value = '';
+            if (cmdString) processCommand(cmdString);
+        }
+    });
+
+    function quickCommand(cmdString) {
+        processCommand(cmdString);
+        inputField.focus();
+    }
+
+    function processCommand(cmdString) {
+        const normalizedCmd = cmdString.replace(/\s+/g, ' ').trim().toLowerCase();
+
+        if (normalizedCmd === 'clear') {
+            terminalHistory.innerHTML = '';
+            return;
+        }
+
+        const historyEntry = document.createElement('div');
+        historyEntry.innerHTML = `<span class="text-emerald-600 mr-2">kvaisakh@devops:~$</span><span class="text-gray-100">${cmdString}</span>`;
+        terminalHistory.appendChild(historyEntry);
+
+        if (normalizedCmd === 'help') {
+            const helpEntry = document.createElement('div');
+            helpEntry.className = 'text-gray-400 ml-4 mb-4 mt-2';
+            helpEntry.innerHTML = `Available commands:<br>
+            - cd /home/kvaisakh<br>
+            - ls<br>
+            - experience<br>
+            - cat experience.log<br>
+            - skills<br>
+            - cat skills.json<br>
+            - projects<br>
+            - ls -la ./projects<br>
+            - contact<br>
+            - ./contact.sh<br>
+            - clear<br>
+            - reboot`;
+            terminalHistory.appendChild(helpEntry);
+
+        } else if (normalizedCmd === 'reboot') {
+            const rebootEntry = document.createElement('div');
+            rebootEntry.className = 'text-red-500 font-bold ml-4 mb-4 mt-2';
+            rebootEntry.innerText = 'Broadcast message from root@devops: The system is going down for reboot NOW!';
+            terminalHistory.appendChild(rebootEntry);
+            inputField.disabled = true;
+            setTimeout(() => {
+                terminalContainer.style.animation = "crt-off 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards";
+                setTimeout(() => window.location.reload(), 600);
+            }, 1200);
+            return;
+
+        } else {
+            let foundId = null;
+            for (const [key, id] of Object.entries(commandMap)) {
+                if (key === normalizedCmd) {
+                    foundId = id;
+                    break;
+                }
+            }
+
+            if (foundId && renderers[foundId]) {
+                const contentWrapper = document.createElement('div');
+                contentWrapper.innerHTML = renderers[foundId]();
+                terminalHistory.appendChild(contentWrapper);
+            } else {
+                const errorEntry = document.createElement('div');
+                errorEntry.className = 'text-gray-400 ml-4 mb-4 mt-2';
+                errorEntry.innerText = `bash: ${cmdString}: command not found. Type 'help' to see available commands.`;
+                terminalHistory.appendChild(errorEntry);
+            }
+        }
+        terminalWindow.scrollTop = terminalWindow.scrollHeight;
+    }
+</script>
+</body>
+</html>
